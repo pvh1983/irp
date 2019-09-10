@@ -9,8 +9,10 @@ import datetime as dt
 
   
 
-# Read groundwater level data downloaded from the USGS website
-ifile = 'water_use_Idaho.txt'
+# Read the national groundwater use data downloaded from the USGS website
+path_to_data = r'C:\\Users\\hpham\\Documents\\P22_IRP\\03_codes\\data\\gw_use\\'
+ifile = path_to_data +  'water_use_Idaho.txt'
+
 # only keep the well that have at least 100 measurements
 min_number_of_measurements = 0
 
@@ -40,21 +42,44 @@ with open(ifile) as f:
 
 # Read data using pandas
 nrow_to_skip = count + 1
-col_name = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c10', 'c11', 'c12', 'c28', 'c29', 'c30', 'c46', 'c47', 'c48', 
-'c61', 'c62', 'c63', 'c77', 'c78', 'c79', 'c93', 'c94', 'c95', 'c110', 'c111', 'c112', 'c127', 'c128', 'c129', 'c144', 
-'c145', 'c146', 'c161', 'c162', 'c163', 'c178', 'c179', 'c180', 'c191', 'c195', 'c196', 'c197', 'c207', 'c208', 'c209', 
-'c219', 'c220', 'c221', 'c231', 'c232', 'c233', 'c250', 'c260']
-col_name = []
-for i in range(283):
-    col_name.append('c'+ str(i+1))
-
-df = pd.read_csv(ifile, skiprows=nrow_to_skip,
+col_name=['c' + str(i+1) for i in range(283)] # list c1 to c283
+df_org = pd.read_csv(ifile, skiprows=nrow_to_skip,
                  delimiter="\t", names=col_name)
+'''
+#'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 
+col_keep = [
+            'c10', 'c11', 'c12', 'c28', 'c29', 'c30', 
+            'c46', 'c47', 'c48','c61', 'c62', 'c63', 
+            'c77', 'c78', 'c79', 'c93', 'c94', 'c95',
+            'c110', 'c111', 'c112', 'c127', 'c128', 'c129', 
+            'c144', 'c145', 'c146', 'c161', 'c162', 'c163',
+            'c178', 'c179', 'c180', 
+            'c191', 
+            'c195', 'c196', 'c197', 
+            'c207', 'c208', 'c209', 'c219', 'c220', 'c221', 
+            'c231', 'c232', 'c233',
+            'c250', 
+            'c260']
+df = df[col_keep]
 
-col_keep = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c10', 'c11', 'c12', 'c28', 'c29', 'c30', 'c46', 'c47', 'c48', 
-'c61', 'c62', 'c63', 'c77', 'c78', 'c79', 'c93', 'c94', 'c95', 'c110', 'c111', 'c112', 'c127', 'c128', 'c129', 'c144', 
-'c145', 'c146', 'c161', 'c162', 'c163', 'c178', 'c179', 'c180', 'c191', 'c195', 'c196', 'c197', 'c207', 'c208', 'c209', 
-'c219', 'c220', 'c221', 'c231', 'c232', 'c233', 'c250', 'c260']
-df_new = df[col_keep]
+df.to_csv('testing.csv', index=None)
+'''
 
-df_new.to_csv('testing.csv', index=None)
+
+# Column with total
+# 'c12','c30','c48','c63','c79','c95','c112','c129','c146','c163','c180','c191','c197'
+# 'c209','c221','c233','c250','c260' 
+col_total = [ 
+             'c12','c30','c48','c63','c79','c95','c112','c129','c146','c163',
+             'c180','c191','c197','c209','c221','c233','c250','c260']
+df = df_org[col_total]
+df = df.apply(pd.to_numeric, errors='coerce') # text to NaN
+
+df.insert(0,'county_nm', df_org.c4)
+df.insert(1,'year', df_org.c5)
+df.insert(2,'Total_gw', df.sum(axis=1, skipna=True))
+
+df.plot.bar(x='county_nm', y='Total_gw')
+
+df.to_csv('gw_use_by_county.csv')
+plt.show()
